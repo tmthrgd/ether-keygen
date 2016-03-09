@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"flag"
 	"log"
 	"time"
 
@@ -26,11 +27,13 @@ const (
 var keys = make([][keySize]byte, 0, total)
 
 func main() {
-	conf := &serf.Config{Addr: "127.0.0.1:7373"}
+	conf := &serf.Config{}
 
-	// TODO: conf.Addr
-	// TODO: conf.AuthKey
-	// TODO: conf.Timeout
+	flag.StringVar(&conf.Addr, "addr", "127.0.0.1:7373", "the address to connect to")
+	flag.StringVar(&conf.AuthKey, "auth", "", "the RPC auth key")
+	flag.DurationVar(&conf.Timeout, "timeout", 0, "the RPC timeout")
+
+	flag.Parse()
 
 	rpc, err := serf.ClientFromConfig(conf)
 	if err != nil {
