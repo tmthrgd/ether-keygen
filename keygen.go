@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"log"
 	"time"
 
 	serf "github.com/hashicorp/serf/client"
@@ -47,6 +48,7 @@ func main() {
 			panic(err)
 		}
 
+		log.Printf("install-key: %x", key[:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
 		}
@@ -56,6 +58,7 @@ func main() {
 
 	// TODO: wait
 
+	log.Printf("use-key: %x", keys[ahead][:nameLen])
 	if err = rpc.UserEvent("use-key", keys[ahead][:nameLen], false); err != nil {
 		panic(err)
 	}
@@ -67,11 +70,13 @@ func main() {
 			panic(err)
 		}
 
+		log.Printf("install-key: %x", key[:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
 		}
 
 		if len(keys) == total {
+			log.Printf("remove-key: %x", keys[total-1][:nameLen])
 			if err = rpc.UserEvent("remove-key", keys[total-1][:nameLen], false); err != nil {
 				panic(err)
 			}
@@ -86,6 +91,7 @@ func main() {
 			keys = append([][keySize]byte{key}, keys...)
 		}
 
+		log.Printf("use-key: %x", keys[ahead][:nameLen])
 		if err = rpc.UserEvent("use-key", keys[ahead][:nameLen], false); err != nil {
 			panic(err)
 		}
