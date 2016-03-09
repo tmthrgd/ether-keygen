@@ -61,8 +61,8 @@ func main() {
 
 	// TODO: wait
 
-	log.Printf("use-key: %x", keys[ahead][:nameLen])
-	if err = rpc.UserEvent("use-key", keys[ahead][:nameLen], false); err != nil {
+	log.Printf("set-default-key: %x", keys[ahead][:nameLen])
+	if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen], false); err != nil {
 		panic(err)
 	}
 
@@ -94,8 +94,8 @@ func main() {
 			keys = append([][keySize]byte{key}, keys...)
 		}
 
-		log.Printf("use-key: %x", keys[ahead][:nameLen])
-		if err = rpc.UserEvent("use-key", keys[ahead][:nameLen], false); err != nil {
+		log.Printf("set-default-key: %x", keys[ahead][:nameLen])
+		if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen], false); err != nil {
 			panic(err)
 		}
 	}
