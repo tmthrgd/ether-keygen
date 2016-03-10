@@ -71,9 +71,14 @@ func main() {
 			panic(err)
 		}
 
-		trans.Printf("install-key %x", key[:nameLen])
+		trans.Printf("install-key %x", key[:nameLen:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
+		}
+
+		// zero key material, leaving name
+		for i := nameLen; i < keySize; i++ {
+			key[i] = 0
 		}
 
 		keys = append([][keySize]byte{key}, keys...)
@@ -81,8 +86,8 @@ func main() {
 
 	// TODO: wait
 
-	trans.Printf("set-default-key %x", keys[ahead][:nameLen])
-	if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen], false); err != nil {
+	trans.Printf("set-default-key %x", keys[ahead][:nameLen:nameLen])
+	if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen:nameLen], false); err != nil {
 		panic(err)
 	}
 
@@ -93,14 +98,19 @@ func main() {
 			panic(err)
 		}
 
-		trans.Printf("install-key %x", key[:nameLen])
+		trans.Printf("install-key %x", key[:nameLen:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
 		}
 
+		// zero key material, leaving name
+		for i := nameLen; i < keySize; i++ {
+			key[i] = 0
+		}
+
 		if len(keys) == total {
-			trans.Printf("remove-key %x", keys[total-1][:nameLen])
-			if err = rpc.UserEvent("remove-key", keys[total-1][:nameLen], false); err != nil {
+			trans.Printf("remove-key %x", keys[total-1][:nameLen:nameLen])
+			if err = rpc.UserEvent("remove-key", keys[total-1][:nameLen:nameLen], false); err != nil {
 				panic(err)
 			}
 
@@ -114,8 +124,8 @@ func main() {
 			keys = append([][keySize]byte{key}, keys...)
 		}
 
-		trans.Printf("set-default-key %x", keys[ahead][:nameLen])
-		if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen], false); err != nil {
+		trans.Printf("set-default-key %x", keys[ahead][:nameLen:nameLen])
+		if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen:nameLen], false); err != nil {
 			panic(err)
 		}
 	}
