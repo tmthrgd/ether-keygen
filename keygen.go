@@ -41,6 +41,8 @@ func main() {
 
 	// TODO: rpc.Join([]string{}, false)
 
+	log.Printf("storing %d keys ahead, %d behind; using each key for %s", ahead, behind, tick)
+
 	// TODO: retrieve old keys from network...
 
 	for i := 0; i < ahead+1; i++ {
