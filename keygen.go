@@ -3,7 +3,9 @@ package main
 import (
 	"crypto/rand"
 	"flag"
+	"io"
 	"log"
+	"os"
 	"time"
 
 	serf "github.com/hashicorp/serf/client"
@@ -32,7 +34,24 @@ func main() {
 	flag.StringVar(&conf.AuthKey, "auth", "", "the RPC auth key")
 	flag.DurationVar(&conf.Timeout, "timeout", 0, "the RPC timeout")
 
+	transName := flag.String("transaction-log", "trans.log", "the transaction log")
+
 	flag.Parse()
+
+	var trans *log.Logger
+
+	if len(*transName) != 0 {
+		transFile, err := os.OpenFile(*transName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+		if err != nil {
+			panic(err)
+		}
+
+		defer transFile.Close()
+
+		trans = log.New(io.MultiWriter(os.Stderr, transFile), "", log.LstdFlags|log.LUTC)
+	} else {
+		trans = log.New(os.Stderr, "", log.LstdFlags|log.LUTC)
+	}
 
 	rpc, err := serf.ClientFromConfig(conf)
 	if err != nil {
@@ -52,7 +71,7 @@ func main() {
 			panic(err)
 		}
 
-		log.Printf("install-key: %x", key[:nameLen])
+		trans.Printf("install-key %x", key[:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
 		}
@@ -62,7 +81,7 @@ func main() {
 
 	// TODO: wait
 
-	log.Printf("set-default-key: %x", keys[ahead][:nameLen])
+	trans.Printf("set-default-key %x", keys[ahead][:nameLen])
 	if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen], false); err != nil {
 		panic(err)
 	}
@@ -74,13 +93,13 @@ func main() {
 			panic(err)
 		}
 
-		log.Printf("install-key: %x", key[:nameLen])
+		trans.Printf("install-key %x", key[:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
 		}
 
 		if len(keys) == total {
-			log.Printf("remove-key: %x", keys[total-1][:nameLen])
+			trans.Printf("remove-key %x", keys[total-1][:nameLen])
 			if err = rpc.UserEvent("remove-key", keys[total-1][:nameLen], false); err != nil {
 				panic(err)
 			}
@@ -95,7 +114,7 @@ func main() {
 			keys = append([][keySize]byte{key}, keys...)
 		}
 
-		log.Printf("set-default-key: %x", keys[ahead][:nameLen])
+		trans.Printf("set-default-key %x", keys[ahead][:nameLen])
 		if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen], false); err != nil {
 			panic(err)
 		}
