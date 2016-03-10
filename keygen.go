@@ -10,11 +10,10 @@ import (
 )
 
 const (
-	// tick = 1 * time.Hour
-	tick = 5 * time.Second
+	tick = 15 * time.Minute
 
 	ahead  = 2
-	behind = 26
+	behind = 26 * int(time.Hour/tick)
 
 	total = ahead + 1 + behind
 
