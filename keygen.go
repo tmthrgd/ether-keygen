@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	msgpack "github.com/hashicorp/go-msgpack/codec"
 	serf "github.com/hashicorp/serf/client"
 )
 
@@ -58,11 +59,43 @@ func main() {
 		panic(err)
 	}
 
-	// TODO: rpc.Join([]string{}, false)
-
 	log.Printf("storing %d keys ahead, %d behind; using each key for %s", ahead, behind, tick)
 
-	// TODO: retrieve old keys from network...
+	queryCh := make(chan map[string]interface{})
+
+	go func() {
+		var buf []byte
+
+		for req := range queryCh {
+			if req["Name"] != "retrieve-keys" {
+				continue
+			}
+
+			trans.Printf("retrieve-keys: %d keys", len(keys))
+
+			enc := msgpack.NewEncoderBytes(&buf, &msgpack.MsgpackHandle{RawToString: true, WriteExt: true})
+
+			resp := struct {
+				Default []byte
+				Keys    [][keySize]byte
+			}{
+				keys[ahead][:nameLen:nameLen],
+				keys,
+			}
+
+			if err := enc.Encode(resp); err != nil {
+				panic(err)
+			}
+
+			if err := rpc.Respond((uint64)(req["ID"].(int64)), buf); err != nil {
+				panic(err)
+			}
+		}
+	}()
+
+	if _, err = rpc.Stream("query", queryCh); err != nil {
+		panic(err)
+	}
 
 	for i := 0; i < ahead+1; i++ {
 		var key [keySize]byte
@@ -74,11 +107,6 @@ func main() {
 		trans.Printf("install-key %x", key[:nameLen:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
-		}
-
-		// zero key material, leaving name
-		for i := nameLen; i < keySize; i++ {
-			key[i] = 0
 		}
 
 		keys = append([][keySize]byte{key}, keys...)
@@ -101,11 +129,6 @@ func main() {
 		trans.Printf("install-key %x", key[:nameLen:nameLen])
 		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
 			panic(err)
-		}
-
-		// zero key material, leaving name
-		for i := nameLen; i < keySize; i++ {
-			key[i] = 0
 		}
 
 		if len(keys) == total {
