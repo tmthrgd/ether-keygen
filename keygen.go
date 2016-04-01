@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	msgpack "github.com/hashicorp/go-msgpack/codec"
@@ -27,6 +28,7 @@ const (
 )
 
 var keys = make([][keySize]byte, 0, total)
+var keysMut sync.RWMutex
 
 func main() {
 	conf := &serf.Config{}
@@ -71,6 +73,7 @@ func main() {
 				continue
 			}
 
+			keysMut.RLock()
 			trans.Printf("retrieve-keys: %d keys", len(keys))
 
 			enc := msgpack.NewEncoderBytes(&buf, &msgpack.MsgpackHandle{RawToString: true, WriteExt: true})
@@ -90,6 +93,7 @@ func main() {
 			if err := rpc.Respond((uint64)(req["ID"].(int64)), buf); err != nil {
 				panic(err)
 			}
+			keysMut.RUnlock()
 		}
 	}()
 
@@ -97,6 +101,7 @@ func main() {
 		panic(err)
 	}
 
+	keysMut.Lock()
 	for i := 0; i < ahead+1; i++ {
 		var key [keySize]byte
 
@@ -112,16 +117,16 @@ func main() {
 		keys = append([][keySize]byte{key}, keys...)
 	}
 
-	// TODO: wait
-
 	trans.Printf("set-default-key %x", keys[ahead][:nameLen:nameLen])
 	if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen:nameLen], false); err != nil {
 		panic(err)
 	}
+	keysMut.Unlock()
 
 	for range time.Tick(tick) {
 		var key [keySize]byte
 
+		keysMut.Lock()
 		if _, err = rand.Read(key[:]); err != nil {
 			panic(err)
 		}
@@ -151,5 +156,6 @@ func main() {
 		if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen:nameLen], false); err != nil {
 			panic(err)
 		}
+		keysMut.Unlock()
 	}
 }
