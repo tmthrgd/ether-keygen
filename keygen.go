@@ -22,9 +22,7 @@ const (
 	total = ahead + 1 + behind
 
 	nameLen = 16
-	encLen  = 16
-	hmacLen = 16
-	keySize = nameLen + encLen + hmacLen
+	keySize = nameLen + 16
 )
 
 var keys = make([][keySize]byte, 0, total)
