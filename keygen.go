@@ -88,7 +88,13 @@ func main() {
 				panic(err)
 			}
 
-			if err := rpc.Respond((uint64)(req["ID"].(int64)), buf); err != nil {
+			id, ok := req["ID"].(uint64)
+
+			if !ok {
+				id = (uint64)(req["ID"].(int64))
+			}
+
+			if err := rpc.Respond(id, buf); err != nil {
 				panic(err)
 			}
 			keysMut.RUnlock()
