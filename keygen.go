@@ -54,6 +54,8 @@ func main() {
 		trans = log.New(os.Stderr, "", log.LstdFlags|log.LUTC)
 	}
 
+	log.SetFlags(log.LstdFlags | log.LUTC)
+
 	rpc, err := serf.ClientFromConfig(conf)
 	if err != nil {
 		panic(err)
