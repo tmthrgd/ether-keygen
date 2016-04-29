@@ -120,7 +120,11 @@ func main() {
 
 		keys = append([][keySize]byte{key}, keys...)
 	}
+	keysMut.Unlock()
 
+	time.Sleep(15 * time.Second)
+
+	keysMut.Lock()
 	trans.Printf("set-default-key %x", keys[ahead][:nameLen:nameLen])
 	if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen:nameLen], false); err != nil {
 		panic(err)
