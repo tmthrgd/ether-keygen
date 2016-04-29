@@ -105,6 +105,13 @@ func main() {
 		panic(err)
 	}
 
+	trans.Println("wipe-keys")
+	if err = rpc.UserEvent("wipe-keys", nil, true); err != nil {
+		panic(err)
+	}
+
+	time.Sleep(30 * time.Second)
+
 	keysMut.Lock()
 	for i := 0; i < ahead+1; i++ {
 		var key [keySize]byte
