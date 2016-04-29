@@ -59,7 +59,7 @@ func main() {
 		panic(err)
 	}
 
-	log.Printf("storing %d keys ahead, %d behind; using each key for %s", ahead, behind, tick)
+	log.Printf("storing %d keys ahead (%s), %d behind (%s); using each key for %s", ahead, time.Duration(ahead)*tick, behind, time.Duration(behind)*tick, tick)
 
 	queryCh := make(chan map[string]interface{})
 
