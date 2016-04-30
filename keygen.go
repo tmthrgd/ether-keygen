@@ -49,12 +49,10 @@ func main() {
 
 		defer transFile.Close()
 
-		trans = log.New(io.MultiWriter(os.Stderr, transFile), "", log.LstdFlags|log.LUTC)
+		trans = log.New(io.MultiWriter(os.Stderr, transFile), "", log.LstdFlags)
 	} else {
-		trans = log.New(os.Stderr, "", log.LstdFlags|log.LUTC)
+		trans = log.New(os.Stderr, "", log.LstdFlags)
 	}
-
-	log.SetFlags(log.LstdFlags | log.LUTC)
 
 	rpc, err := serf.ClientFromConfig(conf)
 	if err != nil {
