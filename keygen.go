@@ -76,13 +76,16 @@ func main() {
 
 			enc := msgpack.NewEncoderBytes(&buf, &msgpack.MsgpackHandle{RawToString: true, WriteExt: true})
 
-			resp := struct {
+			var resp struct {
 				Default []byte
 				Keys    [][keySize]byte
-			}{
-				keys[ahead][:nameLen:nameLen],
-				keys,
 			}
+
+			if len(keys) >= ahead {
+				resp.Default = keys[ahead][:nameLen:nameLen]
+			}
+
+			resp.Keys = keys
 
 			if err := enc.Encode(resp); err != nil {
 				panic(err)
