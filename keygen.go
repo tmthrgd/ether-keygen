@@ -24,8 +24,6 @@ const (
 	nameLen = 16
 	keySize = nameLen + 16
 
-	defaultEventKeyPrefix = "ether:"
-
 	installKeyEvent    = "install-key"
 	removeKeyEvent     = "remove-key"
 	setDefaultKeyEvent = "set-default-key"
@@ -45,7 +43,7 @@ func main() {
 	flag.DurationVar(&conf.Timeout, "timeout", 0, "the RPC timeout")
 
 	var eventKeyPrefix string
-	flag.StringVar(&eventKeyPrefix, "prefix", defaultEventKeyPrefix, "the serf event prefix")
+	flag.StringVar(&eventKeyPrefix, "prefix", "ether:", "the serf event prefix")
 
 	transName := flag.String("transaction-log", "trans.log", "the transaction log")
 
