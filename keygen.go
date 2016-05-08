@@ -23,6 +23,15 @@ const (
 
 	nameLen = 16
 	keySize = nameLen + 16
+
+	defaultEventKeyPrefix = "ether:"
+
+	installKeyEvent    = "install-key"
+	removeKeyEvent     = "remove-key"
+	setDefaultKeyEvent = "set-default-key"
+	wipeKeysEvent      = "wipe-keys"
+
+	retrieveKeysQuery = "retrieve-keys"
 )
 
 var keys = make([][keySize]byte, 0, total)
@@ -34,6 +43,9 @@ func main() {
 	flag.StringVar(&conf.Addr, "addr", "127.0.0.1:7373", "the address to connect to")
 	flag.StringVar(&conf.AuthKey, "auth", "", "the RPC auth key")
 	flag.DurationVar(&conf.Timeout, "timeout", 0, "the RPC timeout")
+
+	var eventKeyPrefix string
+	flag.StringVar(&eventKeyPrefix, "prefix", defaultEventKeyPrefix, "the serf event prefix")
 
 	transName := flag.String("transaction-log", "trans.log", "the transaction log")
 
@@ -67,12 +79,12 @@ func main() {
 		var buf []byte
 
 		for req := range queryCh {
-			if req["Name"] != "retrieve-keys" {
+			if req["Name"] != eventKeyPrefix+retrieveKeysQuery {
 				continue
 			}
 
 			keysMut.RLock()
-			trans.Printf("retrieve-keys: %d keys", len(keys))
+			trans.Printf("%s%s: %d keys", eventKeyPrefix, retrieveKeysQuery, len(keys))
 
 			enc := msgpack.NewEncoderBytes(&buf, &msgpack.MsgpackHandle{RawToString: true, WriteExt: true})
 
@@ -108,8 +120,8 @@ func main() {
 		panic(err)
 	}
 
-	trans.Println("wipe-keys")
-	if err = rpc.UserEvent("wipe-keys", nil, true); err != nil {
+	trans.Printf("%s%s", eventKeyPrefix, wipeKeysEvent)
+	if err = rpc.UserEvent(eventKeyPrefix+wipeKeysEvent, nil, true); err != nil {
 		panic(err)
 	}
 
@@ -123,8 +135,8 @@ func main() {
 			panic(err)
 		}
 
-		trans.Printf("install-key %x", key[:nameLen:nameLen])
-		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
+		trans.Printf("%s%s %x", eventKeyPrefix, installKeyEvent, key[:nameLen:nameLen])
+		if err = rpc.UserEvent(eventKeyPrefix+installKeyEvent, key[:], false); err != nil {
 			panic(err)
 		}
 
@@ -135,8 +147,8 @@ func main() {
 	time.Sleep(15 * time.Second)
 
 	keysMut.Lock()
-	trans.Printf("set-default-key %x", keys[ahead][:nameLen:nameLen])
-	if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen:nameLen], false); err != nil {
+	trans.Printf("%s%s %x", eventKeyPrefix, setDefaultKeyEvent, keys[ahead][:nameLen:nameLen])
+	if err = rpc.UserEvent(eventKeyPrefix+setDefaultKeyEvent, keys[ahead][:nameLen:nameLen], false); err != nil {
 		panic(err)
 	}
 	keysMut.Unlock()
@@ -149,14 +161,14 @@ func main() {
 			panic(err)
 		}
 
-		trans.Printf("install-key %x", key[:nameLen:nameLen])
-		if err = rpc.UserEvent("install-key", key[:], false); err != nil {
+		trans.Printf("%s%s %x", eventKeyPrefix, installKeyEvent, key[:nameLen:nameLen])
+		if err = rpc.UserEvent(eventKeyPrefix+installKeyEvent, key[:], false); err != nil {
 			panic(err)
 		}
 
 		if len(keys) == total {
-			trans.Printf("remove-key %x", keys[total-1][:nameLen:nameLen])
-			if err = rpc.UserEvent("remove-key", keys[total-1][:nameLen:nameLen], false); err != nil {
+			trans.Printf("%s%s %x", eventKeyPrefix, removeKeyEvent, keys[total-1][:nameLen:nameLen])
+			if err = rpc.UserEvent(eventKeyPrefix+removeKeyEvent, keys[total-1][:nameLen:nameLen], false); err != nil {
 				panic(err)
 			}
 
@@ -170,8 +182,8 @@ func main() {
 			keys = append([][keySize]byte{key}, keys...)
 		}
 
-		trans.Printf("set-default-key %x", keys[ahead][:nameLen:nameLen])
-		if err = rpc.UserEvent("set-default-key", keys[ahead][:nameLen:nameLen], false); err != nil {
+		trans.Printf("%s%s %x", eventKeyPrefix, setDefaultKeyEvent, keys[ahead][:nameLen:nameLen])
+		if err = rpc.UserEvent(eventKeyPrefix+setDefaultKeyEvent, keys[ahead][:nameLen:nameLen], false); err != nil {
 			panic(err)
 		}
 		keysMut.Unlock()
