@@ -14,12 +14,7 @@ import (
 )
 
 const (
-	tick = 15 * time.Minute
-
-	ahead  = 2
-	behind = 26 * int(time.Hour/tick)
-
-	total = ahead + 1 + behind
+	defaultBehind = 26 * int(time.Hour/(15*time.Minute))
 
 	nameLen = 16
 	keySize = nameLen + 16
@@ -32,7 +27,7 @@ const (
 	retrieveKeysQuery = "retrieve-keys"
 )
 
-var keys = make([][keySize]byte, 0, total)
+var keys [][keySize]byte
 var keysMut sync.RWMutex
 
 func main() {
@@ -45,9 +40,20 @@ func main() {
 	var eventKeyPrefix string
 	flag.StringVar(&eventKeyPrefix, "prefix", "ether:", "the serf event prefix")
 
+	var tick time.Duration
+	flag.DurationVar(&tick, "tick", 15*time.Minute, "the time each key should be used")
+
+	var ahead int
+	flag.IntVar(&ahead, "ahead", 2, "the number of keys to create ahead of time")
+
+	var behind int
+	flag.IntVar(&behind, "behind", defaultBehind, "the number of keys to keep behind")
+
 	transName := flag.String("transaction-log", "trans.log", "the transaction log")
 
 	flag.Parse()
+
+	total := ahead + 1 + behind
 
 	var trans *log.Logger
 
