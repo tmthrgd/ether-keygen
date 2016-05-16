@@ -47,7 +47,8 @@ func main() {
 	var behind int
 	flag.IntVar(&behind, "behind", 26*int(time.Hour/(15*time.Minute)), "the number of keys to keep behind")
 
-	transName := flag.String("transaction-log", "trans.log", "the transaction log")
+	var transName string
+	flag.StringVar(&transName, "log", "/var/log/ether-keygen.log", "the transaction log file")
 
 	flag.Parse()
 
@@ -55,8 +56,8 @@ func main() {
 
 	var trans *log.Logger
 
-	if len(*transName) != 0 {
-		transFile, err := os.OpenFile(*transName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if len(transName) != 0 {
+		transFile, err := os.OpenFile(transName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 		if err != nil {
 			panic(err)
 		}
