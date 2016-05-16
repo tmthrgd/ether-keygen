@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	defaultBehind = 26 * int(time.Hour/(15*time.Minute))
-
 	nameLen = 16
 	keySize = nameLen + 16
 
@@ -47,7 +45,7 @@ func main() {
 	flag.IntVar(&ahead, "ahead", 2, "the number of keys to create ahead of time")
 
 	var behind int
-	flag.IntVar(&behind, "behind", defaultBehind, "the number of keys to keep behind")
+	flag.IntVar(&behind, "behind", 26*int(time.Hour/(15*time.Minute)), "the number of keys to keep behind")
 
 	transName := flag.String("transaction-log", "trans.log", "the transaction log")
 
