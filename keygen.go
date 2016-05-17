@@ -3,9 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"flag"
-	"io"
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -47,27 +45,9 @@ func main() {
 	var behind int
 	flag.IntVar(&behind, "behind", 26*int(time.Hour/(15*time.Minute)), "the number of keys to keep behind")
 
-	var transName string
-	flag.StringVar(&transName, "log", "/var/log/ether-keygen.log", "the transaction log file")
-
 	flag.Parse()
 
 	total := ahead + 1 + behind
-
-	var trans *log.Logger
-
-	if len(transName) != 0 {
-		transFile, err := os.OpenFile(transName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
-		if err != nil {
-			panic(err)
-		}
-
-		defer transFile.Close()
-
-		trans = log.New(io.MultiWriter(os.Stderr, transFile), "", log.LstdFlags)
-	} else {
-		trans = log.New(os.Stderr, "", log.LstdFlags)
-	}
 
 	rpc, err := serf.ClientFromConfig(conf)
 	if err != nil {
@@ -87,7 +67,7 @@ func main() {
 			}
 
 			keysMut.RLock()
-			trans.Printf("%s%s: %d keys", eventKeyPrefix, retrieveKeysQuery, len(keys))
+			log.Printf("%s%s: %d keys", eventKeyPrefix, retrieveKeysQuery, len(keys))
 
 			enc := msgpack.NewEncoderBytes(&buf, &msgpack.MsgpackHandle{RawToString: true, WriteExt: true})
 
@@ -123,7 +103,7 @@ func main() {
 		panic(err)
 	}
 
-	trans.Printf("%s%s", eventKeyPrefix, wipeKeysEvent)
+	log.Printf("%s%s", eventKeyPrefix, wipeKeysEvent)
 	if err = rpc.UserEvent(eventKeyPrefix+wipeKeysEvent, nil, true); err != nil {
 		panic(err)
 	}
@@ -138,7 +118,7 @@ func main() {
 			panic(err)
 		}
 
-		trans.Printf("%s%s %x", eventKeyPrefix, installKeyEvent, key[:nameLen:nameLen])
+		log.Printf("%s%s %x", eventKeyPrefix, installKeyEvent, key[:nameLen:nameLen])
 		if err = rpc.UserEvent(eventKeyPrefix+installKeyEvent, key[:], false); err != nil {
 			panic(err)
 		}
@@ -150,7 +130,7 @@ func main() {
 	time.Sleep(15 * time.Second)
 
 	keysMut.Lock()
-	trans.Printf("%s%s %x", eventKeyPrefix, setDefaultKeyEvent, keys[ahead][:nameLen:nameLen])
+	log.Printf("%s%s %x", eventKeyPrefix, setDefaultKeyEvent, keys[ahead][:nameLen:nameLen])
 	if err = rpc.UserEvent(eventKeyPrefix+setDefaultKeyEvent, keys[ahead][:nameLen:nameLen], false); err != nil {
 		panic(err)
 	}
@@ -164,13 +144,13 @@ func main() {
 			panic(err)
 		}
 
-		trans.Printf("%s%s %x", eventKeyPrefix, installKeyEvent, key[:nameLen:nameLen])
+		log.Printf("%s%s %x", eventKeyPrefix, installKeyEvent, key[:nameLen:nameLen])
 		if err = rpc.UserEvent(eventKeyPrefix+installKeyEvent, key[:], false); err != nil {
 			panic(err)
 		}
 
 		if len(keys) == total {
-			trans.Printf("%s%s %x", eventKeyPrefix, removeKeyEvent, keys[total-1][:nameLen:nameLen])
+			log.Printf("%s%s %x", eventKeyPrefix, removeKeyEvent, keys[total-1][:nameLen:nameLen])
 			if err = rpc.UserEvent(eventKeyPrefix+removeKeyEvent, keys[total-1][:nameLen:nameLen], false); err != nil {
 				panic(err)
 			}
@@ -185,7 +165,7 @@ func main() {
 			keys = append([][keySize]byte{key}, keys...)
 		}
 
-		trans.Printf("%s%s %x", eventKeyPrefix, setDefaultKeyEvent, keys[ahead][:nameLen:nameLen])
+		log.Printf("%s%s %x", eventKeyPrefix, setDefaultKeyEvent, keys[ahead][:nameLen:nameLen])
 		if err = rpc.UserEvent(eventKeyPrefix+setDefaultKeyEvent, keys[ahead][:nameLen:nameLen], false); err != nil {
 			panic(err)
 		}
