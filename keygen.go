@@ -99,7 +99,7 @@ func main() {
 		}
 	}()
 
-	if _, err = rpc.Stream("query", queryCh); err != nil {
+	if _, err = rpc.Stream("query:"+eventKeyPrefix+retrieveKeysQuery, queryCh); err != nil {
 		panic(err)
 	}
 
