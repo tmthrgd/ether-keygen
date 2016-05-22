@@ -13,7 +13,6 @@ import (
 
 const (
 	nameLen = 16
-	keySize = nameLen + 16
 
 	installKeyEvent    = "install-key"
 	removeKeyEvent     = "remove-key"
@@ -23,7 +22,7 @@ const (
 	retrieveKeysQuery = "retrieve-keys"
 )
 
-var keys [][keySize]byte
+var keys [][]byte
 var keysMut sync.RWMutex
 
 func main() {
@@ -45,16 +44,20 @@ func main() {
 	var behind int
 	flag.IntVar(&behind, "behind", 26*int(time.Hour/(15*time.Minute)), "the number of keys to keep behind")
 
+	var size int
+	flag.IntVar(&size, "size", 256, "the bit length of the key to generate")
+
 	flag.Parse()
 
 	total := ahead + 1 + behind
+	keySize := nameLen + size/8
 
 	rpc, err := serf.ClientFromConfig(conf)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Printf("storing %d keys ahead (%s), %d behind (%s); using each key for %s", ahead, time.Duration(ahead)*tick, behind, time.Duration(behind)*tick, tick)
+	log.Printf("storing %d %d-bit keys ahead (%s), %d behind (%s); using each key for %s", ahead, size, time.Duration(ahead)*tick, behind, time.Duration(behind)*tick, tick)
 
 	queryCh := make(chan map[string]interface{})
 
@@ -73,7 +76,7 @@ func main() {
 
 			var resp struct {
 				Default []byte
-				Keys    [][keySize]byte
+				Keys    [][]byte
 			}
 
 			if len(keys) >= ahead {
@@ -112,7 +115,7 @@ func main() {
 
 	keysMut.Lock()
 	for i := 0; i < ahead+1; i++ {
-		var key [keySize]byte
+		key := make([]byte, keySize)
 
 		if _, err = rand.Read(key[:]); err != nil {
 			panic(err)
@@ -123,7 +126,7 @@ func main() {
 			panic(err)
 		}
 
-		keys = append([][keySize]byte{key}, keys...)
+		keys = append([][]byte{key}, keys...)
 	}
 	keysMut.Unlock()
 
@@ -137,7 +140,7 @@ func main() {
 	keysMut.Unlock()
 
 	for range time.Tick(tick) {
-		var key [keySize]byte
+		key := make([]byte, keySize)
 
 		keysMut.Lock()
 		if _, err = rand.Read(key[:]); err != nil {
@@ -156,13 +159,13 @@ func main() {
 			}
 
 			// zero old key
-			for i := 0; i < keySize; i++ {
+			for i := 0; i < len(keys[total-1]); i++ {
 				keys[total-1][i] = 0
 			}
 
-			keys = append([][keySize]byte{key}, keys[:total-1]...)
+			keys = append([][]byte{key}, keys[:total-1]...)
 		} else {
-			keys = append([][keySize]byte{key}, keys...)
+			keys = append([][]byte{key}, keys...)
 		}
 
 		log.Printf("%s%s %x", eventKeyPrefix, setDefaultKeyEvent, keys[ahead][:nameLen:nameLen])
