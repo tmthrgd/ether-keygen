@@ -159,8 +159,9 @@ func main() {
 			}
 
 			// zero old key
-			for i := 0; i < len(keys[total-1]); i++ {
-				keys[total-1][i] = 0
+			k := keys[total-1]
+			for i := range k {
+				k[i] = 0
 			}
 
 			keys = append([][]byte{key}, keys[:total-1]...)
